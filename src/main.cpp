@@ -85,30 +85,39 @@ int main() {
         string event = j[0].get<string>();
         if (event == "telemetry") {
           // j[1] is the data JSON object
+            
+          /* As the DATA.md illustrated, ptsx is the global x positions of the waypoints.
+              ptsy is the global y position of waypoints.*/
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
-            Eigen::VectorXd Eptsx(ptsx.size());
-            for(int idx = 0; idx < ptsx.size(); idx ++)
-            {
-                Eptsx(idx) = ptsx[idx];
-            }
-            Eigen::VectorXd Eptsy(ptsy.size());
-            for(int idx = 0; idx < ptsy.size(); idx ++)
-            {
-                Eptsy(idx) = ptsy[idx];
-            }
+           
+          /* x is the global x position of the vehicle.
+           y is the golbal y position of the vehicle */
           double px = j[1]["x"];
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
             
-          auto coeffs = polyfit(Eptsx, Eptsy, 1);
+          Eigen::VectorXd Eptsx(ptsx.size());
+          Eigen::VectorXd Eptsy(ptsy.size());
+        
+          std::cout << "The length of ptsx is " << ptsx.size() << std::endl;
+          for(int idx = 0; idx < ptsx.size(); idx ++)
+          {
+             double x = ptsx[idx] - px;
+             double y = ptsy[idx] - py;
             
-          double cte = polyeval(coeffs, px) - py;
-          double epsi = psi - atan(coeffs[3]);
+              Eptsx(idx)= x * cos(-psi) - y * sin(-psi);
+              Eptsy(idx) = x * sin(-psi) + y * cos(-psi);
+          }
+            
+          auto coeffs = polyfit(Eptsx, Eptsy, 3);
+            
+          double cte = polyeval(coeffs, 0);
+          double epsi = - atan(coeffs[1]);
             
           Eigen::VectorXd state(6);
-          state << px, py, psi, v, cte, epsi;
+          state << 0, 0, 0, v, cte, epsi;
 
           /*
           * TODO: Calculate steering angle and throttle using MPC.
@@ -119,30 +128,11 @@ int main() {
           double steer_value;
           double throttle_value;
             
-          std::vector<double> x_vals = {state[0]};
-          std::vector<double> y_vals = {state[1]};
-          std::vector<double> psi_vals = {state[2]};
-          std::vector<double> v_vals = {state[3]};
-          std::vector<double> cte_vals = {state[4]};
-          std::vector<double> epsi_vals = {state[5]};
-          std::vector<double> delta_vals = {};
-          std::vector<double> a_vals = {};
-            
           auto vars = mpc.Solve(state, coeffs);
-        
-          x_vals.push_back(vars[0]);
-          y_vals.push_back(vars[1]);
-          psi_vals.push_back(vars[2]);
-          v_vals.push_back(vars[3]);
-          cte_vals.push_back(vars[4]);
-          epsi_vals.push_back(vars[5]);
             
-          delta_vals.push_back(vars[6]);
-          a_vals.push_back(vars[7]);
-            
-          state << vars[0], vars[1], vars[2], vars[3], vars[4], vars[5];
-            
-
+          steer_value = vars[0]/(deg2rad(25));
+          throttle_value = vars[1];
+   
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
@@ -155,6 +145,11 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
+            for(int i = 0; i < vars.size()/2; i ++)
+            {
+                mpc_x_vals.push_back(vars[i]);
+                mpc_y_vals.push_back(vars[i + 1]);
+            }
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
@@ -168,7 +163,12 @@ int main() {
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-
+            
+            for(int i = 0; i < 50; i ++)
+            {
+                next_x_vals.push_back(i);
+                next_y_vals.push_back(polyeval(coeffs,i));
+            }
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;

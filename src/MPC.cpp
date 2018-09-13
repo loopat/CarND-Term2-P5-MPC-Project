@@ -21,7 +21,7 @@ double dt = 0.1;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-/* reference velocity is set to 40 mph */
+/* reference velocity is set to 100 mph */
 double ref_v = 100.0;
 
 size_t x_start = 0;

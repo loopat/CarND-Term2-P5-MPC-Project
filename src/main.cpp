@@ -90,7 +90,7 @@ int main() {
               ptsy is the global y position of waypoints.*/
           vector<double> ptsx = j[1]["ptsx"];
           vector<double> ptsy = j[1]["ptsy"];
-           
+            
           /* x is the global x position of the vehicle.
            y is the golbal y position of the vehicle */
           double px = j[1]["x"];
@@ -145,11 +145,11 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Green line
-            for(int i = 0; i < vars.size()/2; i ++)
-            {
-                mpc_x_vals.push_back(vars[i]);
-                mpc_y_vals.push_back(vars[i + 1]);
-            }
+          for(int i = 0; i < vars.size()/2; i += 2)
+          {
+             mpc_x_vals.push_back(vars[i]);
+             mpc_y_vals.push_back(vars[i + 1]);
+          }
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
@@ -160,15 +160,14 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
+         for(int i = 0; i < 50; i ++)
+         {
+            next_x_vals.push_back(i);
+            next_y_vals.push_back(polyeval(coeffs,i));
+         }
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
-            
-            for(int i = 0; i < 50; i ++)
-            {
-                next_x_vals.push_back(i);
-                next_y_vals.push_back(polyeval(coeffs,i));
-            }
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;

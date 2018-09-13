@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 20;
+size_t N = 10;
 double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
@@ -22,7 +22,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 /* reference velocity is set to 40 mph */
-double ref_v = 40.0;
+double ref_v = 100.0;
 
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -52,7 +52,7 @@ class FG_eval {
       /* The cost of cte, psi, v */
       for(int t = 0; t < N; t ++)
       {
-          fg[0] += CppAD::pow(vars[cte_start + t], 2);
+          fg[0] += 1000 * CppAD::pow(vars[cte_start + t], 2);
           fg[0] += CppAD::pow(vars[epsi_start + t], 2);
           fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
       }
@@ -60,15 +60,15 @@ class FG_eval {
       /* The cost of delta, a */
       for(int t = 0; t < N - 1; t ++)
       {
-          fg[0] += 10*CppAD::pow(vars[delta_start + t], 2);
-          fg[0] += 10*CppAD::pow(vars[a_start + t], 2);
+          fg[0] += 1000 * CppAD::pow(vars[delta_start + t], 2);
+          fg[0] += 1000 * CppAD::pow(vars[a_start + t], 2);
       }
       
       /* The cost of the change of delta, a  */
       for(int t = 0; t < N - 2; t ++)
       {
-          fg[0] += 100 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t],2);
-          fg[0] += 100 * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+          fg[0] += 3000 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t],2);
+          fg[0] += 3000 * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
       }
       
       /*
@@ -161,13 +161,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     vars[i] = 0;
   }
 
-  vars[x_start] = x;
-  vars[y_start] = y;
-  vars[psi_start] = psi;
-  vars[v_start] = v;
-  vars[cte_start] = cte;
-  vars[epsi_start] = epsi;
-
   Dvector vars_lowerbound(n_vars);
   Dvector vars_upperbound(n_vars);
     
@@ -182,7 +175,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   for(int i = delta_start; i < a_start; i ++)
   {
       vars_lowerbound[i] = -0.436332;
-      vars_lowerbound[i] = 0.436332;
+      vars_upperbound[i] = 0.436332;
   }
     
   for (int i = a_start; i < n_vars; i ++)
@@ -244,7 +237,6 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   CppAD::ipopt::solve<Dvector, FG_eval>(
       options, vars, vars_lowerbound, vars_upperbound, constraints_lowerbound,
       constraints_upperbound, fg_eval, solution);
-    std::cout << "Here 2" << std::endl;
   // Check some of the solution values
   ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
 
@@ -259,12 +251,15 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // creates a 2 element double vector.
     
     vector<double> solve_vector;
+    std::cout << solution.x[delta_start] << std::endl;
     solve_vector.push_back(solution.x[delta_start]);
     solve_vector.push_back(solution.x[a_start]);
-    for(int j = 0; j < N - 1; j ++)
+
+    for(int j = 0; j < N; j ++)
     {
         solve_vector.push_back(solution.x[x_start + j]);
         solve_vector.push_back(solution.x[y_start + j]);
     }
+
     return solve_vector;
 }

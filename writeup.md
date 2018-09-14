@@ -59,3 +59,53 @@ n\_vars: The number of model varialbes. As there are x, y, psi, v, cte, epsi are
 
 n_contraints: It is N * 6.
 
+#### latency
+
+The latency is problem that due to that in the actual case, an actuation command won't execute instantly. So there will be a delay as the command propagates through the system. 
+
+In this project, the latency is 100ms.
+
+There are mainly two steps:
+
+(1) At current time t=0, your car's states are px=0, py=0, psi=0 right after converting to car coordinate. 
+
+(2) Predict all the states for t=latency base on kinematic model equations. 
+(Thanks for the help from the reviewer about the latency prompt. \^_^)
+
+#### N and dt
+
+As the lectures said,  T should be as large as possible, while dt should be as small as possible.
+
+After adding the latency, based on the same other paramters and handling, I tried the following set of parameters N and dt:
+
+(1) { N = 10, dt = 0.1  }
+
+(2) { N = 30, dt = 0.1  }
+
+(3) { N = 5 , dt = 0.1  }
+
+(4) { N = 10, dt = 0.02  }
+
+(5) { N = 10, dt = 0.3  }
+
+The run results are:
+
+(2) It will lead the car out of the trjactory too much and out of the road after running for a little while.
+
+(3) The car starts slowly, and take a longer time to speed up to the final speed is 7 - 8 mph. At the sharp curve, it may runs straightlly, and out of road.
+
+(4) The car starts slowly, and take a longer time to speed up to the final speed which is about 3.5 - 3.8 mph. 
+
+(5) The car starts fast, and take a shorter time to speed up. But it is alway out of the trajectory too much, and may be blocked.
+
+(1) The cars runs well, compared with other set parameters.
+
+Consider the princple, T should be as large as possible, while dt should be as small as possible. I tried another set of parameter
+
+(6) { N = 30, dt = 0.03 }
+
+It runs better most time, except when the car runs to curve and before a little distance to the curva, the car runs a little swingly.
+
+
+
+
